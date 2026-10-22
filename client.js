@@ -455,6 +455,8 @@ window.__ModuleLoader__.load({
 
       useEffect(() => {
         const handleMessage = (e) => {
+          const isAllowedOrigin = !e.origin || e.origin === window.location.origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(e.origin);
+          if (!isAllowedOrigin) return;
           if (e.data && e.data.type === 'agy-quota-auth-complete') {
             fetchStatus(true);
           }
@@ -585,10 +587,10 @@ window.__ModuleLoader__.load({
               h('div', { className: 'agy-plan-name' }, `Your Plan: ${plan.tierName || 'Google AI Pro'}`),
               plan.upgradeText && h('div', { className: 'agy-plan-desc' }, plan.upgradeText)
             ),
-            plan.upgradeUri && h('a', {
+            (plan.upgradeUri && /^https?:\/\//i.test(plan.upgradeUri)) && h('a', {
               href: plan.upgradeUri,
               target: '_blank',
-              rel: 'noreferrer',
+              rel: 'noopener noreferrer',
               className: 'agy-btn agy-btn-primary',
             }, 'Upgrade')
           )
@@ -598,7 +600,8 @@ window.__ModuleLoader__.load({
         h('div', { className: 'agy-card' },
           h('div', { className: 'agy-user-row' },
             h('div', { className: 'agy-user-info' },
-              user?.picture ? h('img', { src: user.picture, alt: user.name || 'User', className: 'agy-avatar' })
+              (user?.picture && /^https:\/\//i.test(user.picture))
+                ? h('img', { src: user.picture, alt: user.name || 'User', className: 'agy-avatar' })
                 : h('div', { className: 'agy-avatar', style: { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.1)' } }, '👤'),
               h('div', { className: 'agy-user-details' },
                 h('span', { className: 'agy-user-name' },

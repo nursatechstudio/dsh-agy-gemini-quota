@@ -1,20 +1,46 @@
 const { getValidAuth, extractAntigravityToken, saveStoredAuth, clearStoredAuth, startOAuthLogin } = require('./src/auth');
 const { fetchUserQuotaSummary, fetchUserProfile } = require('./src/quota');
 
-function sendJson(res, statusCode, body) {
+function isAllowedOrigin(origin, host) {
+  if (!origin) return true;
+  try {
+    const parsed = new URL(origin);
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') return true;
+    if (host && parsed.host === host) return true;
+  } catch (_) {}
+  return false;
+}
+
+function sendJson(res, statusCode, body, req = null) {
   res.statusCode = statusCode;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+
+  const origin = req?.headers?.origin;
+  if (origin && isAllowedOrigin(origin, req?.headers?.host)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+
   res.end(JSON.stringify(body));
 }
 
-function parseJsonBody(req) {
+function parseJsonBody(req, maxBytes = 65536) {
   return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', chunk => { data += chunk; });
+    let bytes = 0;
+    req.on('data', chunk => {
+      bytes += chunk.length;
+      if (bytes > maxBytes) {
+        req.destroy();
+        reject(new Error('Payload too large'));
+        return;
+      }
+      data += chunk;
+    });
     req.on('end', () => {
       try {
         resolve(data ? JSON.parse(data) : {});
@@ -56,11 +82,21 @@ const plugin = {
         kind: 'prefix',
         path: '/api/agy-quota',
         handler: async (req, res) => {
+          const origin = req.headers.origin;
+          const host = req.headers.host;
+
+          if (origin && !isAllowedOrigin(origin, host)) {
+            sendJson(res, 403, { ok: false, message: 'Forbidden: untrusted cross-origin request' }, req);
+            return;
+          }
+
           if (req.method === 'OPTIONS') {
             res.statusCode = 204;
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            if (origin && isAllowedOrigin(origin, host)) {
+              res.setHeader('Access-Control-Allow-Origin', origin);
+              res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+              res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            }
             res.end();
             return;
           }
@@ -79,7 +115,7 @@ const plugin = {
                   ok: false,
                   authenticated: false,
                   message: 'No Antigravity credentials found. Please log in or auto-detect.',
-                });
+                }, req);
                 return;
               }
 
@@ -90,7 +126,7 @@ const plugin = {
                 authSource: data.authSource,
                 user: data.user,
                 quota: data.quota,
-              });
+              }, req);
               return;
             }
 
@@ -101,7 +137,7 @@ const plugin = {
                 sendJson(res, 404, {
                   ok: false,
                   message: 'Antigravity IDE local credentials not found.',
-                });
+                }, req);
                 return;
               }
 
@@ -113,7 +149,7 @@ const plugin = {
                 authSource: localAuth.source,
                 user: data.user,
                 quota: data.quota,
-              });
+              }, req);
               return;
             }
 
@@ -124,29 +160,39 @@ const plugin = {
                 ok: true,
                 authUrl: oauthInfo.authUrl,
                 port: oauthInfo.port,
-              });
+              }, req);
               return;
             }
 
             // POST /api/agy-quota/manual
             if (pathname === '/api/agy-quota/manual' && req.method === 'POST') {
               const body = await parseJsonBody(req);
-              if (!body.refreshToken && !body.accessToken) {
-                sendJson(res, 400, { ok: false, message: 'Missing refreshToken or accessToken' });
+              const accessToken = typeof body.accessToken === 'string' ? body.accessToken.trim() : null;
+              const refreshToken = typeof body.refreshToken === 'string' ? body.refreshToken.trim() : null;
+
+              if (!refreshToken && !accessToken) {
+                sendJson(res, 400, { ok: false, message: 'Missing refreshToken or accessToken' }, req);
+                return;
+              }
+
+              // Validate format to prevent malformed or malicious payloads
+              const isValidToken = t => !t || (t.length <= 4096 && !/[\x00-\x1F\s]/.test(t));
+              if (!isValidToken(accessToken) || !isValidToken(refreshToken)) {
+                sendJson(res, 400, { ok: false, message: 'Invalid token format' }, req);
                 return;
               }
 
               saveStoredAuth({
-                accessToken: body.accessToken || null,
-                refreshToken: body.refreshToken || null,
+                accessToken: accessToken || null,
+                refreshToken: refreshToken || null,
                 source: 'manual',
-                expiresAt: body.accessToken ? Date.now() + 3600 * 1000 : null,
+                expiresAt: accessToken ? Date.now() + 3600 * 1000 : null,
               });
 
               cachedQuota = null;
               const auth = await getValidAuth();
               if (!auth) {
-                sendJson(res, 400, { ok: false, message: 'Invalid token provided.' });
+                sendJson(res, 400, { ok: false, message: 'Invalid token provided.' }, req);
                 return;
               }
 
@@ -157,7 +203,7 @@ const plugin = {
                 authSource: 'manual',
                 user: data.user,
                 quota: data.quota,
-              });
+              }, req);
               return;
             }
 
@@ -165,17 +211,17 @@ const plugin = {
             if (pathname === '/api/agy-quota/logout' && req.method === 'POST') {
               clearStoredAuth();
               cachedQuota = null;
-              sendJson(res, 200, { ok: true, authenticated: false });
+              sendJson(res, 200, { ok: true, authenticated: false }, req);
               return;
             }
 
-            sendJson(res, 404, { ok: false, message: `Route not found: ${pathname}` });
+            sendJson(res, 404, { ok: false, message: `Route not found: ${pathname}` }, req);
           } catch (err) {
             console.error('[agy-quota] API error:', err);
             sendJson(res, 500, {
               ok: false,
-              message: err.message || 'Internal server error',
-            });
+              message: 'An internal error occurred while processing the request',
+            }, req);
           }
         },
       }), 'agy-quota: /api/agy-quota route');

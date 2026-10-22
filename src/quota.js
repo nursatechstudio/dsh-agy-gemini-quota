@@ -33,6 +33,7 @@ async function fetchUserQuotaSummary(accessToken) {
           'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ project: 'aicode-consumers' }),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (res.ok) {
@@ -70,15 +71,19 @@ async function fetchPlanInfo(accessToken, baseUrl = ENDPOINTS[0]) {
           ideVersion: '2.5.5',
         },
       }),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (res.ok) {
       const data = await res.json();
+      const rawUri = data.paidTier?.upgradeSubscriptionUri || data.currentTier?.upgradeSubscriptionUri || '';
+      const safeUpgradeUri = typeof rawUri === 'string' && /^https?:\/\//i.test(rawUri) ? rawUri : '';
+
       return {
         tierId: data.paidTier?.id || data.currentTier?.id || 'free-tier',
         tierName: data.paidTier?.name || data.currentTier?.name || 'Google AI Free',
         upgradeText: data.paidTier?.upgradeSubscriptionText || data.currentTier?.upgradeSubscriptionText || '',
-        upgradeUri: data.paidTier?.upgradeSubscriptionUri || data.currentTier?.upgradeSubscriptionUri || '',
+        upgradeUri: safeUpgradeUri,
       };
     }
   } catch (err) {
@@ -94,13 +99,17 @@ async function fetchUserProfile(accessToken) {
   try {
     const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { 'Authorization': `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(10000),
     });
     if (res.ok) {
       const info = await res.json();
+      const rawPic = info.picture;
+      const safePic = typeof rawPic === 'string' && /^https:\/\//i.test(rawPic) ? rawPic : null;
+
       return {
-        email: info.email,
-        name: info.name,
-        picture: info.picture,
+        email: typeof info.email === 'string' ? info.email : null,
+        name: typeof info.name === 'string' ? info.name : null,
+        picture: safePic,
       };
     }
   } catch (err) {

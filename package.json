@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-agy-quota",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "DeepSeek Harness plugin for Antigravity Gemini quota monitoring in settings submenu agy-quota",
   "license": "MIT",
   "repository": {

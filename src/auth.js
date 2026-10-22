@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const crypto = require('crypto');
 
 // Load .env file if available
 try {
@@ -28,7 +29,7 @@ function getStoragePath() {
   const home = process.env.USERPROFILE || process.env.HOME || '.';
   const dir = path.join(home, '.dsh');
   if (!fs.existsSync(dir)) {
-    try { fs.mkdirSync(dir, { recursive: true }); } catch (_) {}
+    try { fs.mkdirSync(dir, { recursive: true, mode: 0o700 }); } catch (_) {}
   }
   return path.join(dir, 'agy-quota-auth.json');
 }
@@ -48,7 +49,7 @@ function loadStoredAuth() {
 function saveStoredAuth(auth) {
   try {
     const file = getStoragePath();
-    fs.writeFileSync(file, JSON.stringify(auth, null, 2), 'utf8');
+    fs.writeFileSync(file, JSON.stringify(auth, null, 2), { encoding: 'utf8', mode: 0o600 });
   } catch (err) {
     console.error('[agy-quota] Failed to save stored auth:', err.message);
   }
@@ -131,6 +132,7 @@ async function refreshAccessToken(refreshToken) {
       refresh_token: refreshToken,
       grant_type: 'refresh_token',
     }),
+    signal: AbortSignal.timeout(10000),
   });
 
   const data = await res.json();
@@ -161,6 +163,7 @@ async function exchangeCodeForTokens(code, redirectUri) {
       grant_type: 'authorization_code',
       redirect_uri: redirectUri,
     }),
+    signal: AbortSignal.timeout(10000),
   });
 
   const data = await res.json();
@@ -191,21 +194,43 @@ function startOAuthLogin() {
       activeOAuthServer = null;
     }
 
+    const expectedState = crypto.randomBytes(24).toString('hex');
+
     const server = http.createServer(async (req, res) => {
       try {
-        const reqUrl = new URL(req.url, `http://localhost:${server.address().port}`);
+        const port = server.address().port;
+        const hostHeader = req.headers.host;
+        const allowedHosts = [`127.0.0.1:${port}`, `localhost:${port}`];
+
+        // DNS rebinding protection
+        if (!hostHeader || !allowedHosts.includes(hostHeader)) {
+          res.writeHead(400, { 'Content-Type': 'text/plain' });
+          res.end('Bad Request: Invalid Host header');
+          return;
+        }
+
+        const reqUrl = new URL(req.url, `http://localhost:${port}`);
         if (reqUrl.pathname === '/oauth-callback') {
           const code = reqUrl.searchParams.get('code');
           const error = reqUrl.searchParams.get('error');
+          const state = reqUrl.searchParams.get('state');
+
+          // CSRF protection: state token verification
+          if (!state || state !== expectedState) {
+            res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end('<h3>Access Denied</h3><p>OAuth state mismatch or missing.</p>');
+            return;
+          }
 
           if (error) {
+            const safeError = String(error).replace(/[<>&"]/g, '');
             res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(`<h3>Login Failed</h3><p>Google returned error: ${error}</p><script>setTimeout(() => window.close(), 3000);</script>`);
+            res.end(`<h3>Login Failed</h3><p>Google returned error: ${safeError}</p><script>setTimeout(() => window.close(), 3000);</script>`);
             return;
           }
 
           if (code) {
-            const redirectUri = `http://localhost:${server.address().port}/oauth-callback`;
+            const redirectUri = `http://localhost:${port}/oauth-callback`;
             const tokens = await exchangeCodeForTokens(code, redirectUri);
             
             saveStoredAuth({
@@ -245,10 +270,12 @@ function startOAuthLogin() {
         res.end('Not found');
       } catch (err) {
         console.error('[agy-quota] OAuth callback error:', err);
-        res.writeHead(500, { 'Content-Type': 'text/html' });
-        res.end(`<h3>Server Error</h3><p>${err.message}</p>`);
+        res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end('<h3>Server Error</h3><p>Failed to complete authentication.</p>');
       }
     });
+
+    server.requestTimeout = 30000;
 
     server.listen(0, '127.0.0.1', () => {
       const port = server.address().port;
@@ -259,6 +286,7 @@ function startOAuthLogin() {
         redirect_uri: redirectUri,
         response_type: 'code',
         scope: OAUTH_SCOPES,
+        state: expectedState,
         access_type: 'offline',
         prompt: 'consent',
       }).toString();
@@ -270,13 +298,13 @@ function startOAuthLogin() {
       reject(err);
     });
 
-    // Timeout server after 3 minutes if unused
+    // Timeout server after 2 minutes if unused
     setTimeout(() => {
       if (activeOAuthServer === server) {
         try { server.close(); } catch (_) {}
         activeOAuthServer = null;
       }
-    }, 180000);
+    }, 120000);
   });
 }
 
