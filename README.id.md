@@ -18,6 +18,14 @@
 
 Plugin DeepSeek Harness untuk memonitor kuota Antigravity Gemini dan Claude secara realtime langsung di submenu Settings `agy-quota`.
 
+## 📸 Tampilan
+
+<div align="center">
+  <img src="assets/1.png" alt="Ikhtisar Akun & Kuota Antigravity" width="720" />
+  <br/><br/>
+  <img src="assets/2.png" alt="Kuota Model Gemini, Claude & GPT" width="720" />
+</div>
+
 ## ✨ Fitur
 
 - **Kuota Gemini Realtime**: Menampilkan batas kuota mingguan (Weekly) dan 5 jam (5-Hour rolling) lengkap dengan progress bar, persentase, dan hitung mundur reset.

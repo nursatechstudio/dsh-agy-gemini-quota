@@ -18,6 +18,14 @@
 
 DeepSeek Harness plugin for Antigravity Gemini quota monitoring in Settings submenu `agy-quota`.
 
+## 📸 Preview
+
+<div align="center">
+  <img src="assets/1.png" alt="Antigravity Account & Quota Overview" width="720" />
+  <br/><br/>
+  <img src="assets/2.png" alt="Gemini, Claude & GPT Model Quotas" width="720" />
+</div>
+
 ## ✨ Features
 
 - **Live Gemini Quota**: Weekly and 5-Hour rolling limits with visual progress bars, percentage, and reset time countdown.
