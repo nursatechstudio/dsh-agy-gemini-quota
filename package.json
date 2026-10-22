@@ -20,6 +20,14 @@
     "url": "https://github.com/nursatechstudio/dsh-agy-gemini-quota/issues"
   },
   "main": "index.js",
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
