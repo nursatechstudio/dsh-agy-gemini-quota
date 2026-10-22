@@ -1,8 +1,24 @@
-# dsh-plugin-agy-quota
+<div align="center">
+
+# 📊 dsh-agy-gemini-quota
+
+**DeepSeek Harness × Google Antigravity — Real-time Gemini & Claude Quota Monitor**
+
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node version](https://img.shields.io/badge/node-%3E%3D20-green.svg)](package.json)
+[![DSH](https://img.shields.io/badge/DSH-plugin-orange.svg)](https://github.com/nursatechstudio/dsh-agy-gemini-quota)
+[![GitHub stars](https://img.shields.io/github/stars/nursatechstudio/dsh-agy-gemini-quota?style=social)](https://github.com/nursatechstudio/dsh-agy-gemini-quota)
+
+🌐 **Language**: [English](README.md) · [Bahasa Indonesia](README.id.md)
+
+---
+
+</div>
 
 DeepSeek Harness plugin for Antigravity Gemini quota monitoring in Settings submenu `agy-quota`.
 
-## Features
+## ✨ Features
+
 - **Live Gemini Quota**: Weekly and 5-Hour rolling limits with visual progress bars, percentage, and reset time countdown.
 - **Claude & 3P Quota**: Tracks third-party quota bucket (Claude Opus/Sonnet/GPT).
 - **Multiple Login Methods**:
@@ -12,7 +28,7 @@ DeepSeek Harness plugin for Antigravity Gemini quota monitoring in Settings subm
   4. **Manual Token**: Paste refresh token (`1//...`) or access token (`ya29...`) in the UI.
 - **Settings Submenu**: Integrates directly into DSH Settings sidebar under `agy-quota`.
 
-## Installation
+## 📦 Installation
 
 ### 1. Install via DSH CLI
 
@@ -39,7 +55,7 @@ dsh --profile web --dump-config
 dsh plugin --profile web remove dsh-plugin-agy-quota
 ```
 
-## Configuration (Optional)
+## ⚙️ Configuration (Optional)
 
 If running in headless mode or without Antigravity IDE installed on the same machine:
 
@@ -54,6 +70,6 @@ AGY_REFRESH_TOKEN=1//...
 
 *Note: Never commit `.env` or sensitive credentials to Git.*
 
-## License
+## 📄 License
 
 [MIT](LICENSE)
