@@ -7,6 +7,7 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node version](https://img.shields.io/badge/node-%3E%3D20-green.svg)](package.json)
 [![DSH](https://img.shields.io/badge/DSH-plugin-orange.svg)](https://github.com/nursatechstudio/dsh-agy-gemini-quota)
+[![Listed on dsh-plugin.org](https://dsh-plugin.org/badges/listed.svg)](https://dsh-plugin.org/plugins/nursatechstudio/dsh-agy-gemini-quota)
 [![GitHub stars](https://img.shields.io/github/stars/nursatechstudio/dsh-agy-gemini-quota?style=social)](https://github.com/nursatechstudio/dsh-agy-gemini-quota)
 
 🌐 **Language**: [English](README.md) · [Bahasa Indonesia](README.id.md)
@@ -31,6 +32,11 @@ DeepSeek Harness plugin for Antigravity Gemini quota monitoring in Settings subm
 ## 📦 Installation
 
 ### 1. Install via DSH CLI
+
+From NPM (recommended for DSH Plugin Hub):
+```bash
+dsh plugin --profile web add dsh-plugin-agy-quota
+```
 
 From GitHub:
 ```bash

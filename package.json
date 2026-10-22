@@ -5,7 +5,19 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/nursatechstudio/dsh-agy-gemini-quota.git"
+    "url": "git+https://github.com/nursatechstudio/dsh-agy-gemini-quota.git"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "antigravity",
+    "gemini",
+    "quota"
+  ],
+  "homepage": "https://github.com/nursatechstudio/dsh-agy-gemini-quota#readme",
+  "bugs": {
+    "url": "https://github.com/nursatechstudio/dsh-agy-gemini-quota/issues"
   },
   "main": "index.js",
   "exports": {

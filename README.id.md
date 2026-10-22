@@ -7,6 +7,7 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node version](https://img.shields.io/badge/node-%3E%3D20-green.svg)](package.json)
 [![DSH](https://img.shields.io/badge/DSH-plugin-orange.svg)](https://github.com/nursatechstudio/dsh-agy-gemini-quota)
+[![Listed on dsh-plugin.org](https://dsh-plugin.org/badges/listed.svg)](https://dsh-plugin.org/plugins/nursatechstudio/dsh-agy-gemini-quota)
 [![GitHub stars](https://img.shields.io/github/stars/nursatechstudio/dsh-agy-gemini-quota?style=social)](https://github.com/nursatechstudio/dsh-agy-gemini-quota)
 
 🌐 **Bahasa**: [English](README.md) · [Bahasa Indonesia](README.id.md)
@@ -31,6 +32,11 @@ Plugin DeepSeek Harness untuk memonitor kuota Antigravity Gemini dan Claude seca
 ## 📦 Instalasi
 
 ### 1. Instal via CLI DSH
+
+Dari NPM (disarankan untuk DSH Plugin Hub):
+```bash
+dsh plugin --profile web add dsh-plugin-agy-quota
+```
 
 Dari GitHub:
 ```bash

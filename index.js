@@ -184,4 +184,5 @@ const plugin = {
 };
 
 module.exports = plugin;
+module.exports.apply = plugin.apply;
 module.exports.default = plugin;
