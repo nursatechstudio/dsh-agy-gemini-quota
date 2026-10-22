@@ -1,0 +1,3 @@
+- insert:
+    - id: agy-quota
+      name: 'dsh-plugin-agy-quota'

@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment variables & Stored Auth (NEVER COMMIT SENSITIVE DATA)
+.env
+.env.*
+!.env.example
+*.local
+agy-quota-auth.json
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
